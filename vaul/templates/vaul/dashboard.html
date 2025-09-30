@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="grid" style="margin-bottom:12px;align-items:center;grid-template-columns:1fr auto;">
+  <h2 style="margin:0;">Mis contraseñas</h2>
+  <a class="btn primary" href="{% url 'add_password' %}">Agregar nueva</a>
+  <div></div>
+</div>
+
+<div class="grid cols-3">
+{% for entry in entries %}
+  <div class="card list item">
+    <div style="font-weight:600;">{{ entry.site_name }}</div>
+    <div class="muted"><a href="{{ entry.site_url }}" target="_blank">{{ entry.site_url }}</a></div>
+    <div class="muted">Usuario: {{ entry.username }}</div>
+    <div style="margin-top:8px;">
+      Contraseña:
+      <span id="pwd-mask-{{ entry.id }}">••••••••</span>
+      <span id="pwd-value-{{ entry.id }}" style="display:none;"></span>
+    </div>
+    <div style="margin-top:8px; display:flex; gap:8px;">
+      <button id="btn-toggle-{{ entry.id }}" class="btn" type="button" onclick="togglePassword({{ entry.id }})">Mostrar</button>
+      <a class="btn primary" href="{% url 'edit_password' entry.id %}">Editar</a>
+    </div>
+  </div>
+{% empty %}
+  <p class="muted">No tienes contraseñas guardadas todavía.</p>
+{% endfor %}
+</div>
+
+<script>
+// Obtiene CSRF token desde las cookies (documentado por Django)
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+async function togglePassword(entryId) {
+  const maskEl = document.getElementById(`pwd-mask-${entryId}`);
+  const valEl = document.getElementById(`pwd-value-${entryId}`);
+  const btn = document.getElementById(`btn-toggle-${entryId}`);
+  if (!maskEl || !valEl || !btn) return;
+
+  // Si ya está visible, ocultamos sin llamar al servidor
+  if (valEl.style.display === 'inline') {
+    valEl.style.display = 'none';
+    maskEl.style.display = 'inline';
+    btn.textContent = 'Mostrar';
+    return;
+  }
+
+  // Si ya está cargada (texto presente), solo mostramos
+  if (valEl.textContent && valEl.textContent.trim().length > 0) {
+    maskEl.style.display = 'none';
+    valEl.style.display = 'inline';
+    btn.textContent = 'Ocultar';
+    return;
+  }
+
+  // Primera vez: pedimos al servidor
+  const csrftoken = getCookie('csrftoken');
+  try {
+    const resp = await fetch(`/reveal/${entryId}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken
+      },
+      body: JSON.stringify({})
+    });
+    if (!resp.ok) {
+      throw new Error('No se pudo recuperar la contraseña');
+    }
+    const data = await resp.json();
+    if (data && data.password) {
+      maskEl.style.display = 'none';
+      valEl.textContent = data.password;
+      valEl.style.display = 'inline';
+      btn.textContent = 'Ocultar';
+    }
+  } catch (e) {
+    alert(e.message || 'Error inesperado');
+  }
+}
+</script>
+{% endblock %}

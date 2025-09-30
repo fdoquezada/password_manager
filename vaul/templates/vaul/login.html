@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card" style="max-width:420px;margin:24px auto;">
+  <h2>Iniciar sesión</h2>
+  <form method="post" class="grid">
+    {% csrf_token %}
+    <div class="field">
+      <label>Usuario</label>
+      <input type="text" name="username" placeholder="Usuario">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" name="password" placeholder="Contraseña">
+    </div>
+    <div>
+      <button type="submit" class="btn primary">Entrar</button>
+    </div>
+  </form>
+  <p class="muted">¿No tienes cuenta? <a href="{% url 'register' %}">Crear cuenta</a></p>
+</div>
+{% endblock %}
