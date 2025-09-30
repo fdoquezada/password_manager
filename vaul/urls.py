@@ -10,4 +10,5 @@ urlpatterns = [
     path('add/', views.add_password, name='add_password'),
     path('reveal/<int:entry_id>/', views.reveal_password, name='reveal_password'),
     path('edit/<int:entry_id>/', views.edit_password, name='edit_password'),
+    path('help/', views.help_view, name='help'),
 ]

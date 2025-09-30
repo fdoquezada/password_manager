@@ -77,6 +77,10 @@ def edit_password(request, entry_id: int):
     return render(request, 'vaul/edit_password.html', {'entry': entry})
 
 @login_required
+def help_view(request):
+    return render(request, 'vaul/help.html')
+
+@login_required
 def reveal_password(request, entry_id: int):
     if request.method != 'POST':
         return HttpResponseForbidden('Método no permitido')

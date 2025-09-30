@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card" style="max-width:800px;margin:24px auto;">
+  <h2><i class="fas fa-question-circle me-2"></i>Ayuda - Gestor de Contraseñas</h2>
+  
+  <div class="help-section">
+    <h3><i class="fas fa-info-circle me-2"></i>¿Qué es este proyecto?</h3>
+    <p>Este es un sistema de gestión de contraseñas desarrollado con Django que te permite almacenar de forma segura tus credenciales de diferentes sitios web. Las contraseñas se cifran usando el algoritmo Fernet antes de guardarse en la base de datos.</p>
+  </div>
+
+  <div class="help-section">
+    <h3><i class="fas fa-shield-alt me-2"></i>Características de Seguridad</h3>
+    <ul>
+      <li><strong>Cifrado:</strong> Todas las contraseñas se cifran usando Fernet antes de guardarse</li>
+      <li><strong>Ocultación:</strong> Las contraseñas se muestran ocultas por defecto en el dashboard</li>
+      <li><strong>Revelado bajo demanda:</strong> Solo puedes ver la contraseña cuando presionas "Mostrar"</li>
+      <li><strong>Control de acceso:</strong> Solo puedes ver y editar tus propias contraseñas</li>
+    </ul>
+  </div>
+
+  <div class="help-section">
+    <h3><i class="fas fa-list me-2"></i>Cómo usar el sistema</h3>
+    
+    <h4>1. Registro e Inicio de Sesión</h4>
+    <p>Crea una cuenta nueva o inicia sesión con tus credenciales existentes.</p>
+    
+    <h4>2. Agregar Contraseñas</h4>
+    <p>Ve a "Agregar nueva" desde el dashboard y completa:</p>
+    <ul>
+      <li><strong>Nombre del sitio:</strong> Un nombre descriptivo (ej: "Gmail", "Facebook")</li>
+      <li><strong>URL del sitio:</strong> La dirección web del sitio</li>
+      <li><strong>Usuario:</strong> Tu nombre de usuario o email</li>
+      <li><strong>Contraseña:</strong> Tu contraseña para ese sitio</li>
+    </ul>
+    
+    <h4>3. Ver Contraseñas</h4>
+    <p>En el dashboard verás todas tus contraseñas guardadas. Para ver una contraseña:</p>
+    <ul>
+      <li>Presiona el botón "Mostrar" junto a la contraseña que quieres ver</li>
+      <li>La contraseña aparecerá en texto plano</li>
+      <li>Presiona "Ocultar" para volver a ocultarla</li>
+    </ul>
+    
+    <h4>4. Editar Entradas</h4>
+    <p>Para modificar una entrada existente:</p>
+    <ul>
+      <li>Presiona el botón "Editar" junto a la entrada que quieres modificar</li>
+      <li>Cambia los campos que necesites</li>
+      <li>Si quieres cambiar la contraseña, escribe la nueva en el campo "Nueva contraseña"</li>
+      <li>Si no quieres cambiar la contraseña, deja ese campo vacío</li>
+      <li>Presiona "Guardar cambios"</li>
+    </ul>
+  </div>
+
+  <div class="help-section">
+    <h3><i class="fas fa-mobile-alt me-2"></i>Uso en Dispositivos Móviles</h3>
+    <p>El sitio está optimizado para dispositivos móviles. En pantallas pequeñas:</p>
+    <ul>
+      <li>Las tarjetas de contraseñas se apilan verticalmente</li>
+      <li>Los botones se adaptan al tamaño de pantalla</li>
+      <li>La navegación se mantiene accesible</li>
+    </ul>
+  </div>
+
+  <div class="help-section">
+    <h3><i class="fas fa-exclamation-triangle me-2"></i>Recomendaciones de Seguridad</h3>
+    <ul>
+      <li>Usa contraseñas únicas y fuertes para cada sitio</li>
+      <li>No compartas tus credenciales de acceso al gestor</li>
+      <li>Cierra sesión cuando termines de usar el sistema</li>
+      <li>Mantén actualizado tu navegador web</li>
+    </ul>
+  </div>
+
+  <div class="help-section">
+    <h3><i class="fas fa-cog me-2"></i>Soporte Técnico</h3>
+    <p>Si tienes problemas con el sistema:</p>
+    <ul>
+      <li>Verifica que tu conexión a internet funcione correctamente</li>
+      <li>Intenta recargar la página</li>
+      <li>Si el problema persiste, contacta al administrador del sistema</li>
+    </ul>
+  </div>
+
+  <div class="text-center" style="margin-top:32px;">
+    <a href="{% url 'dashboard' %}" class="btn primary">
+      <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+    </a>
+  </div>
+</div>
+
+<style>
+.help-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1f2937;
+}
+.help-section:last-of-type {
+  border-bottom: none;
+}
+.help-section h3 {
+  color: var(--primary);
+  margin-bottom: 12px;
+}
+.help-section h4 {
+  color: var(--text);
+  margin: 16px 0 8px;
+}
+.help-section ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+.help-section li {
+  margin-bottom: 6px;
+}
+</style>
+{% endblock %}
