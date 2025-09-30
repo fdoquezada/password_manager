@@ -6,11 +6,15 @@
     {% csrf_token %}
     <div class="field">
       <label>Usuario</label>
-      <input type="text" name="username" placeholder="Usuario">
+      <input type="text" name="username" placeholder="Usuario" value="{{ username_value|default:'' }}">
     </div>
     <div class="field">
       <label>Contraseña</label>
       <input type="password" name="password" placeholder="Contraseña">
+    </div>
+    <div class="field">
+      <label>Confirmar contraseña</label>
+      <input type="password" name="confirm_password" placeholder="Repite tu contraseña">
     </div>
     <div>
       <button type="submit" class="btn primary">Crear cuenta</button>

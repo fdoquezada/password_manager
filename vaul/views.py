@@ -23,10 +23,32 @@ def register_view(request):
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
-        if username and password and not User.objects.filter(username=username).exists():
-            user = User.objects.create_user(username=username, password=password)
-            login(request, user)
-            return redirect('dashboard')
+        confirm  = request.POST.get('confirm_password', '').strip()
+
+        if not username:
+            messages.error(request, 'Debes ingresar un nombre de usuario.')
+            return render(request, 'vaul/register.html', {'username_value': username})
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'El usuario ya existe. Elige otro nombre de usuario.')
+            return render(request, 'vaul/register.html', {'username_value': username})
+
+        if not password or not confirm:
+            messages.error(request, 'Debes ingresar y confirmar la contraseña.')
+            return render(request, 'vaul/register.html', {'username_value': username})
+
+        if password != confirm:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return render(request, 'vaul/register.html', {'username_value': username})
+
+        if len(password) < 8:
+            messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
+            return render(request, 'vaul/register.html', {'username_value': username})
+
+        user = User.objects.create_user(username=username, password=password)
+        login(request, user)
+        messages.success(request, 'Cuenta creada correctamente. ¡Bienvenido!')
+        return redirect('dashboard')
     return render(request, 'vaul/register.html')
 
 def logout_view(request):

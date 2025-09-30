@@ -19,8 +19,8 @@
                 <a href="{% url 'add_password' %}">Agregar</a>
                 <a href="{% url 'help' %}">Ayuda</a>
                 <div class="nav-user">
-                    <span class="user-name">{{ user.username }}</span>
-                    <a href="{% url 'logout' %}">Cerrar sesión</a>
+                    <span class="user-name">Bienvenido>  {{ user.username }}</span>
+                    <a class="user-name" href="{% url 'logout' %}">Cerrar sesión </a>
                 </div>
             {% else %}
                 <a href="{% url 'login' %}">Iniciar sesión</a>
