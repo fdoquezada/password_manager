@@ -7,6 +7,11 @@ from django.http import JsonResponse, HttpResponseForbidden
 from .models import PasswordEntry
 from .utils import encrypt_password, decrypt_password
 
+def home_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'vaul/home.html')
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
