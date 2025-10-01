@@ -22,7 +22,8 @@
       <span id="pwd-value-{{ entry.id }}" style="display:none;"></span>
     </div>
     <div style="margin-top:8px; display:flex; gap:8px;">
-      <button id="btn-toggle-{{ entry.id }}" class="btn" type="button" onclick="togglePassword({{ entry.id }})">Mostrar</button>
+      <button id="btn-toggle-{{ entry.id }}" class="btn" type="button" onclick="togglePassword({{ entry.id }}); window.appScheduleHide && window.appScheduleHide({{ entry.id }});">Mostrar</button>
+      <button class="btn" type="button" onclick="window.appCopy && window.appCopy({{ entry.id }})">Copiar</button>
       <a class="btn primary" href="{% url 'edit_password' entry.id %}">Editar</a>
     </div>
   </div>
@@ -48,6 +49,17 @@ function getCookie(name) {
   return cookieValue;
 }
 
+// Exponer helpers para botones inline
+window.appCopy = (entryId) => {
+  const valEl = document.getElementById(`pwd-value-${entryId}`);
+  if (valEl && valEl.textContent) {
+    if (window.__app && __app.copyToClipboard) __app.copyToClipboard(valEl.textContent);
+  }
+};
+window.appScheduleHide = (entryId) => {
+  if (window.__app && __app.scheduleAutoHide) __app.scheduleAutoHide(entryId, 10000);
+};
+
 async function togglePassword(entryId) {
   const maskEl = document.getElementById(`pwd-mask-${entryId}`);
   const valEl = document.getElementById(`pwd-value-${entryId}`);
@@ -71,7 +83,7 @@ async function togglePassword(entryId) {
   }
 
   // Primera vez: pedimos al servidor
-  const csrftoken = getCookie('csrftoken');
+  const csrftoken = (window.__app && __app.getCSRFToken) ? __app.getCSRFToken() : getCookie('csrftoken');
   try {
     const resp = await fetch(`/reveal/${entryId}/`, {
       method: 'POST',
@@ -90,10 +102,17 @@ async function togglePassword(entryId) {
       valEl.textContent = data.password;
       valEl.style.display = 'inline';
       btn.textContent = 'Ocultar';
+      if (window.__app && __app.showToast) __app.showToast('Contraseña revelada');
     }
   } catch (e) {
-    alert(e.message || 'Error inesperado');
+    if (window.__app && __app.showToast) __app.showToast(e.message || 'Error inesperado', 'error');
+    else alert(e.message || 'Error inesperado');
   }
 }
+</script>
+
+<script type="module">
+import { getCSRFToken, showToast, copyToClipboard, scheduleAutoHide } from '/static/js/app.js';
+window.__app = { getCSRFToken, showToast, copyToClipboard, scheduleAutoHide };
 </script>
 {% endblock %}
