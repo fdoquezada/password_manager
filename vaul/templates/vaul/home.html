@@ -1,4 +1,8 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block favicon %}
+    <link rel="icon" href="{% static 'img/casa.png' %}" type="image/x-icon">
+{% endblock %}
 {% block content %}
 
 <section class="hero card" style="overflow:hidden; position:relative;">

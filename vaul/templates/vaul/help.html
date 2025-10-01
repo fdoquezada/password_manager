@@ -1,4 +1,8 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block favicon %}
+    <link rel="icon" href="{% static 'img/apoyo.png' %}" type="image/x-icon">
+{% endblock %}
 {% block content %}
 <div class="card" style="max-width:800px;margin:24px auto;">
   <h2><i class="fas fa-question-circle me-2"></i>Ayuda - Gestor de Contraseñas</h2>

@@ -69,12 +69,33 @@ def dashboard(request):
 @login_required
 def add_password(request):
     if request.method == 'POST':
-        encrypted = encrypt_password(request.POST['password'])
+        site_name = request.POST.get('site_name', '').strip()
+        site_url = request.POST.get('site_url', '').strip()
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+
+        if not site_name or not site_url or not username or not password:
+            messages.error(request, 'Todos los campos son obligatorios.')
+            return render(request, 'vaul/add_password.html', {
+                'site_name': site_name,
+                'site_url': site_url,
+                'username': username,
+            })
+
+        if len(site_url) > 2048:
+            messages.error(request, 'La URL es demasiado larga (máximo 2048 caracteres).')
+            return render(request, 'vaul/add_password.html', {
+                'site_name': site_name,
+                'site_url': site_url,
+                'username': username,
+            })
+
+        encrypted = encrypt_password(password)
         PasswordEntry.objects.create(
             user=request.user,
-            site_name=request.POST['site_name'],
-            site_url=request.POST['site_url'],
-            username=request.POST['username'],
+            site_name=site_name,
+            site_url=site_url,
+            username=username,
             encrypted_password=encrypted
         )
         messages.success(request, 'Contraseña guardada correctamente.')

@@ -1,4 +1,8 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block favicon %}
+    <link rel="icon" href="{% static 'img/register.png' %}" type="image/x-icon">
+{% endblock %}
 {% block content %}
 <div class="card" style="max-width:420px;margin:24px auto;">
   <h2>Crear cuenta</h2>
