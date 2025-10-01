@@ -21,10 +21,14 @@
       <span id="pwd-mask-{{ entry.id }}">••••••••</span>
       <span id="pwd-value-{{ entry.id }}" style="display:none;"></span>
     </div>
-    <div style="margin-top:8px; display:flex; gap:8px;">
+    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
       <button id="btn-toggle-{{ entry.id }}" class="btn" type="button" onclick="togglePassword({{ entry.id }}); window.appScheduleHide && window.appScheduleHide({{ entry.id }});">Mostrar</button>
       <button class="btn" type="button" onclick="window.appCopy && window.appCopy({{ entry.id }})">Copiar</button>
       <a class="btn primary" href="{% url 'edit_password' entry.id %}">Editar</a>
+      <form method="post" action="{% url 'delete_password' entry.id %}" onsubmit="return confirmDelete(event)">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Eliminar</button>
+      </form>
     </div>
   </div>
 {% empty %}
@@ -114,5 +118,12 @@ async function togglePassword(entryId) {
 <script type="module">
 import { getCSRFToken, showToast, copyToClipboard, scheduleAutoHide } from '/static/js/app.js';
 window.__app = { getCSRFToken, showToast, copyToClipboard, scheduleAutoHide };
+window.confirmDelete = (e) => {
+  if (!confirm('¿Seguro que deseas eliminar esta entrada? Esta acción no se puede deshacer.')) {
+    e.preventDefault();
+    return false;
+  }
+  return true;
+}
 </script>
 {% endblock %}

@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponseForbidden
-from .models import PasswordEntry
+from .models import PasswordEntry, RevealLog
 from .utils import encrypt_password, decrypt_password
 
 def home_view(request):
@@ -125,6 +125,17 @@ def edit_password(request, entry_id: int):
     return render(request, 'vaul/edit_password.html', {'entry': entry})
 
 @login_required
+def delete_password(request, entry_id: int):
+    if request.method != 'POST':
+        return HttpResponseForbidden('Método no permitido')
+    entry = get_object_or_404(PasswordEntry, id=entry_id)
+    if entry.user_id != request.user.id:
+        return HttpResponseForbidden('No autorizado')
+    entry.delete()
+    messages.success(request, 'Entrada eliminada correctamente.')
+    return redirect('dashboard')
+
+@login_required
 def help_view(request):
     return render(request, 'vaul/help.html')
 
@@ -137,6 +148,15 @@ def reveal_password(request, entry_id: int):
         return HttpResponseForbidden('No autorizado')
     try:
         decrypted = decrypt_password(entry.encrypted_password)
+        # Log de auditoría
+        ip = request.META.get('REMOTE_ADDR')
+        ua = request.META.get('HTTP_USER_AGENT', '')
+        RevealLog.objects.create(user=request.user, entry=entry, ip_address=ip, user_agent=ua)
         return JsonResponse({'password': decrypted})
     except Exception:
         return JsonResponse({'error': 'No se pudo descifrar'}, status=400)
+
+@login_required
+def reveal_logs(request):
+    logs = RevealLog.objects.filter(user=request.user).select_related('entry')
+    return render(request, 'vaul/reveal_logs.html', {'logs': logs})

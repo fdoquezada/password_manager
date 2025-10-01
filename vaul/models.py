@@ -10,3 +10,13 @@ class PasswordEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 # Create your models here.
+
+class RevealLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    entry = models.ForeignKey(PasswordEntry, on_delete=models.CASCADE)
+    revealed_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+
+    class Meta:
+        ordering = ('-revealed_at',)

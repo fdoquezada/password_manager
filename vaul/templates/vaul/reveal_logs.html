@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card" style="max-width:900px;margin:24px auto;">
+  <h2><i class="fas fa-book me-2"></i>Historial de Revelados</h2>
+  <p class="muted">Solo ves tus propios registros.</p>
+  <div class="grid cols-3" style="margin-top:12px;">
+    <div class="muted">Entrada</div>
+    <div class="muted">Fecha y hora</div>
+    <div class="muted">IP / Navegador</div>
+  </div>
+  <hr>
+  {% for log in logs %}
+    <div class="grid cols-3" style="align-items:center;">
+      <div>{{ log.entry.site_name }} ({{ log.entry.username }})</div>
+      <div>{{ log.revealed_at }}</div>
+      <div><small class="muted">{{ log.ip_address|default:'-' }} / {{ log.user_agent|default:'-' }}</small></div>
+    </div>
+  {% empty %}
+    <p class="muted">Aún no hay registros.</p>
+  {% endfor %}
+  <div style="margin-top:16px;">
+    <a class="btn" href="{% url 'dashboard' %}">Volver</a>
+  </div>
+</div>
+{% endblock %}
+
+
