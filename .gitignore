@@ -1,3 +1,22 @@
+# Entorno
+entorno/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Django
+staticfiles/
+media/
+
+# Entorno local
+.env
+.env.*
+
+# VSCode/Cursor
+.vscode/
+.cursor/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
