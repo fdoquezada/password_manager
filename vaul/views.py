@@ -3,7 +3,10 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
+from django.utils import timezone
+from datetime import datetime, time
+import csv
 from .models import PasswordEntry, RevealLog
 from .utils import encrypt_password, decrypt_password
 
@@ -159,4 +162,46 @@ def reveal_password(request, entry_id: int):
 @login_required
 def reveal_logs(request):
     logs = RevealLog.objects.filter(user=request.user).select_related('entry')
-    return render(request, 'vaul/reveal_logs.html', {'logs': logs})
+
+    start_str = request.GET.get('start', '').strip()
+    end_str = request.GET.get('end', '').strip()
+
+    start_dt = None
+    end_dt = None
+    try:
+        if start_str:
+            start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
+            start_dt = timezone.make_aware(datetime.combine(start_date, time.min))
+        if end_str:
+            end_date = datetime.strptime(end_str, '%Y-%m-%d').date()
+            end_dt = timezone.make_aware(datetime.combine(end_date, time.max))
+    except Exception:
+        start_dt = None
+        end_dt = None
+
+    if start_dt:
+        logs = logs.filter(revealed_at__gte=start_dt)
+    if end_dt:
+        logs = logs.filter(revealed_at__lte=end_dt)
+
+    if request.GET.get('format') == 'csv':
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="reveal_logs.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Entrada', 'Usuario', 'Revelado en', 'IP', 'User-Agent'])
+        for log in logs:
+            writer.writerow([
+                f"{log.entry.site_name} ({log.entry.username})",
+                request.user.username,
+                timezone.localtime(log.revealed_at).strftime('%Y-%m-%d %H:%M:%S'),
+                log.ip_address or '',
+                (log.user_agent or '')[:500]
+            ])
+        return response
+
+    context = {
+        'logs': logs,
+        'start': start_str,
+        'end': end_str,
+    }
+    return render(request, 'vaul/reveal_logs.html', context)

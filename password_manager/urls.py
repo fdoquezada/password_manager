@@ -16,9 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf.urls import handler400, handler403, handler404, handler500
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('vaul.urls')),
     path('contacto/', include('contacto.urls')),
 ]
+
+# Handlers de error personalizados
+handler400 = 'password_manager.views.bad_request'
+handler403 = 'password_manager.views.permission_denied'
+handler404 = 'password_manager.views.page_not_found'
+handler500 = 'password_manager.views.server_error'

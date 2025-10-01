@@ -3,6 +3,21 @@
 <div class="card" style="max-width:900px;margin:24px auto;">
   <h2><i class="fas fa-book me-2"></i>Historial de Revelados</h2>
   <p class="muted">Solo ves tus propios registros.</p>
+  <form method="get" class="grid cols-3" style="align-items:end;">
+    <div>
+      <label>Desde</label>
+      <input type="date" name="start" value="{{ start|default:'' }}">
+    </div>
+    <div>
+      <label>Hasta</label>
+      <input type="date" name="end" value="{{ end|default:'' }}">
+    </div>
+    <div>
+      <button type="submit" class="btn primary">Filtrar</button>
+      <a class="btn" href="?">Limpiar</a>
+      <a class="btn" href="?start={{ start }}&end={{ end }}&format=csv">Exportar CSV</a>
+    </div>
+  </form>
   <div class="grid cols-3" style="margin-top:12px;">
     <div class="muted">Entrada</div>
     <div class="muted">Fecha y hora</div>

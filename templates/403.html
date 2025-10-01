@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Acceso denegado{% endblock %}
+{% block content %}
+<div class="card" style="max-width:720px;margin:24px auto;text-align:center;">
+  <h2><i class="fas fa-ban me-2"></i>403 - Acceso denegado</h2>
+  <p class="muted">No tienes permisos para acceder a este recurso.</p>
+  <div style="margin-top:12px;">
+    <a class="btn primary" href="{% url 'home' %}">Volver al inicio</a>
+  </div>
+</div>
+{% endblock %}
+
+
