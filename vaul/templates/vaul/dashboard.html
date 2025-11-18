@@ -36,6 +36,30 @@
 {% endfor %}
 </div>
 
+{% if entries.has_other_pages %}
+<div style="margin-top: 24px; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
+  {% if entries.has_previous %}
+    <a href="?page=1" class="btn">« Primera</a>
+    <a href="?page={{ entries.previous_page_number }}" class="btn">‹ Anterior</a>
+  {% else %}
+    <span class="btn" style="opacity: 0.5; cursor: not-allowed;">« Primera</span>
+    <span class="btn" style="opacity: 0.5; cursor: not-allowed;">‹ Anterior</span>
+  {% endif %}
+  
+  <span class="muted" style="padding: 0 12px;">
+    Página {{ entries.number }} de {{ entries.paginator.num_pages }}
+  </span>
+  
+  {% if entries.has_next %}
+    <a href="?page={{ entries.next_page_number }}" class="btn">Siguiente ›</a>
+    <a href="?page={{ entries.paginator.num_pages }}" class="btn">Última »</a>
+  {% else %}
+    <span class="btn" style="opacity: 0.5; cursor: not-allowed;">Siguiente ›</span>
+    <span class="btn" style="opacity: 0.5; cursor: not-allowed;">Última »</span>
+  {% endif %}
+</div>
+{% endif %}
+
 <script>
 // Obtiene CSRF token desde las cookies (documentado por Django)
 function getCookie(name) {

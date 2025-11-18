@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
 from datetime import datetime, time
 import csv
@@ -62,11 +63,23 @@ def register_view(request):
 def logout_view(request):
     if request.user.is_authenticated:
         logout(request)
-    return redirect('login')
+    return redirect('home')
 
 @login_required
 def dashboard(request):
-    entries = PasswordEntry.objects.filter(user=request.user)
+    entries_list = PasswordEntry.objects.filter(user=request.user).order_by('-id')
+    paginator = Paginator(entries_list, 9)  # 9 entradas por página (3x3 grid)
+    
+    page = request.GET.get('page')
+    try:
+        entries = paginator.page(page)
+    except PageNotAnInteger:
+        # Si la página no es un entero, mostrar la primera página
+        entries = paginator.page(1)
+    except EmptyPage:
+        # Si la página está fuera de rango, mostrar la última página
+        entries = paginator.page(paginator.num_pages)
+    
     return render(request, 'vaul/dashboard.html', {'entries': entries})
 
 @login_required
@@ -138,7 +151,6 @@ def delete_password(request, entry_id: int):
     messages.success(request, 'Entrada eliminada correctamente.')
     return redirect('dashboard')
 
-@login_required
 def help_view(request):
     return render(request, 'vaul/help.html')
 

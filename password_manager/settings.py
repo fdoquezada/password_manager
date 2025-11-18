@@ -145,3 +145,9 @@ else:
     EMAIL_HOST_USER = config('EMAIL_HOST_USER')
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
     DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+
+# Autenticación
+# Asegura que @login_required redirija a nuestra vista de login personalizada
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'home'
