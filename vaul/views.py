@@ -68,7 +68,7 @@ def logout_view(request):
 @login_required
 def dashboard(request):
     entries_list = PasswordEntry.objects.filter(user=request.user).order_by('-id')
-    paginator = Paginator(entries_list, 9)  # 9 entradas por página (3x3 grid)
+    paginator = Paginator(entries_list, 12)  # 9 entradas por página (3x3 grid)
     
     page = request.GET.get('page')
     try:
