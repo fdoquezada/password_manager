@@ -6,11 +6,57 @@
 {% block content %}
 <div class="grid" style="margin-bottom:12px;align-items:center;grid-template-columns:1fr auto;">
   <h2 style="margin:0;">Mis contraseñas</h2>
-  <a class="btn primary" href="{% url 'add_password' %}">Agregar nueva</a>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <a class="btn primary" href="{% url 'add_password' %}">Agregar nueva</a>
+    <a class="btn" href="{% url 'export_passwords' %}" title="Exportar todas las contraseñas">
+      <i class="fas fa-download"></i> Exportar
+    </a>
+    <form method="post" action="{% url 'import_passwords' %}" enctype="multipart/form-data" style="display: inline;" onsubmit="return confirm('¿Estás seguro de importar contraseñas? Esto agregará nuevas entradas sin eliminar las existentes.');">
+      {% csrf_token %}
+      <label class="btn" style="cursor: pointer; margin: 0;">
+        <i class="fas fa-upload"></i> Importar
+        <input type="file" name="file" accept=".json" style="display: none;" onchange="this.form.submit();">
+      </label>
+    </form>
+  </div>
   <div></div>
 </div>
 
-<!-- Campo de búsqueda -->
+<!-- Estadísticas -->
+<div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #1f2937 0%, #111827 100%);">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+    <div style="text-align: center;">
+      <div style="font-size: 32px; font-weight: bold; color: var(--primary);">{{ total_entries }}</div>
+      <div class="muted">Total</div>
+    </div>
+    {% for key, value in category_stats.items %}
+    {% if value > 0 %}
+    <div style="text-align: center;">
+      <div style="font-size: 24px; font-weight: bold; color: var(--text);">{{ value }}</div>
+      <div class="muted" style="font-size: 12px;">{% for choice in category_choices %}{% if choice.0 == key %}{{ choice.1 }}{% endif %}{% endfor %}</div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% if weak_passwords or duplicate_passwords %}
+  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #1f2937;">
+    {% if weak_passwords %}
+    <div style="color: #fecaca; margin-bottom: 8px;">
+      <i class="fas fa-exclamation-triangle"></i> 
+      <strong>{{ weak_passwords|length }}</strong> contraseña(s) débil(es) detectada(s)
+    </div>
+    {% endif %}
+    {% if duplicate_passwords %}
+    <div style="color: #fecaca;">
+      <i class="fas fa-exclamation-circle"></i> 
+      <strong>{{ duplicate_passwords|length }}</strong> contraseña(s) duplicada(s) detectada(s)
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Filtros y búsqueda -->
 <form method="get" action="{% url 'dashboard' %}" style="margin-bottom: 20px;">
   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
     <input 
@@ -18,13 +64,19 @@
       name="q" 
       value="{{ search_query }}" 
       placeholder="Buscar por nombre, URL o usuario..." 
-      style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+      style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #374151; border-radius: 4px; font-size: 14px; background: #0b1220; color: var(--text);"
       autocomplete="off"
     />
+    <select name="category" style="padding: 8px 12px; border: 1px solid #374151; border-radius: 4px; background: #0b1220; color: var(--text);">
+      <option value="">Todas las categorías</option>
+      {% for choice in category_choices %}
+      <option value="{{ choice.0 }}" {% if category_filter == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+      {% endfor %}
+    </select>
     <button type="submit" class="btn" style="white-space: nowrap;">
       <i class="fas fa-search"></i> Buscar
     </button>
-    {% if search_query %}
+    {% if search_query or category_filter %}
     <a href="{% url 'dashboard' %}" class="btn" style="white-space: nowrap;">
       <i class="fas fa-times"></i> Limpiar
     </a>
@@ -32,12 +84,32 @@
   </div>
 </form>
 
-<div class="grid cols-3"> <!-- 4 columnas para una vista más amplia -->
+<div class="grid cols-3"> <!-- 3 columnas para una vista más amplia -->
 {% for entry in entries %}
-  <div class="card list item">
-    <div style="font-weight:600;">{{ entry.site_name }}</div>
-    <div class="muted"><a href="{{ entry.site_url }}" target="_blank">{{ entry.site_url }}</a></div>
+  <div class="card list item" style="position: relative; {% if entry.id in weak_passwords or entry.id in duplicate_passwords %}border-left: 4px solid #ef4444;{% endif %}">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+      <div style="font-weight:600; flex: 1;">{{ entry.site_name }}</div>
+      <span style="font-size: 11px; padding: 4px 8px; background: rgba(99, 102, 241, 0.2); border-radius: 4px; color: var(--primary);">
+        {% for choice in category_choices %}{% if choice.0 == entry.category %}{{ choice.1 }}{% endif %}{% endfor %}
+      </span>
+    </div>
+    {% if entry.id in weak_passwords %}
+    <div style="font-size: 11px; color: #fecaca; margin-bottom: 4px;">
+      <i class="fas fa-exclamation-triangle"></i> Contraseña débil
+    </div>
+    {% endif %}
+    {% if entry.id in duplicate_passwords %}
+    <div style="font-size: 11px; color: #fecaca; margin-bottom: 4px;">
+      <i class="fas fa-exclamation-circle"></i> Contraseña duplicada
+    </div>
+    {% endif %}
+    <div class="muted"><a href="{{ entry.site_url }}" target="_blank" style="color: var(--muted);">{{ entry.site_url }}</a></div>
     <div class="muted">Usuario: {{ entry.username }}</div>
+    {% if entry.notes %}
+    <div class="muted" style="margin-top: 8px; font-size: 12px; font-style: italic; border-left: 2px solid #374151; padding-left: 8px;">
+      {{ entry.notes|truncatewords:15 }}
+    </div>
+    {% endif %}
     <div style="margin-top:8px;">
       Contraseña:
       <span id="pwd-mask-{{ entry.id }}">••••••••</span>
@@ -47,7 +119,7 @@
       <button id="btn-toggle-{{ entry.id }}" class="btn" type="button" onclick="togglePassword({{ entry.id }}); window.appScheduleHide && window.appScheduleHide({{ entry.id }});">Mostrar</button>
       <button class="btn" type="button" onclick="window.appCopy && window.appCopy({{ entry.id }})">Copiar</button>
       <a class="btn primary" href="{% url 'edit_password' entry.id %}">Editar</a>
-      <form method="post" action="{% url 'delete_password' entry.id %}" onsubmit="return confirmDelete(event)">
+      <form method="post" action="{% url 'delete_password' entry.id %}" onsubmit="return confirmDelete(event)" style="margin: 0;">
         {% csrf_token %}
         <button class="btn danger" type="submit">Eliminar</button>
       </form>
@@ -61,8 +133,8 @@
 {% if entries.has_other_pages %}
 <div style="margin-top: 24px; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
   {% if entries.has_previous %}
-    <a href="?page=1{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="btn">« Primera</a>
-    <a href="?page={{ entries.previous_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="btn">‹ Anterior</a>
+    <a href="?page=1{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn">« Primera</a>
+    <a href="?page={{ entries.previous_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn">‹ Anterior</a>
   {% else %}
     <span class="btn" style="opacity: 0.5; cursor: not-allowed;">« Primera</span>
     <span class="btn" style="opacity: 0.5; cursor: not-allowed;">‹ Anterior</span>
@@ -73,8 +145,8 @@
   </span>
   
   {% if entries.has_next %}
-    <a href="?page={{ entries.next_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="btn">Siguiente ›</a>
-    <a href="?page={{ entries.paginator.num_pages }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="btn">Última »</a>
+    <a href="?page={{ entries.next_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn">Siguiente ›</a>
+    <a href="?page={{ entries.paginator.num_pages }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn">Última »</a>
   {% else %}
     <span class="btn" style="opacity: 0.5; cursor: not-allowed;">Siguiente ›</span>
     <span class="btn" style="opacity: 0.5; cursor: not-allowed;">Última »</span>

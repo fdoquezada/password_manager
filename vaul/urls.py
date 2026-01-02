@@ -13,4 +13,6 @@ urlpatterns = [
     path('delete/<int:entry_id>/', views.delete_password, name='delete_password'),
     path('help/', views.help_view, name='help'),
     path('logs/', views.reveal_logs, name='reveal_logs'),
+    path('export/', views.export_passwords, name='export_passwords'),
+    path('import/', views.import_passwords, name='import_passwords'),
 ]

@@ -109,4 +109,81 @@ export function scheduleAutoHide(entryId, ms = 10000) {
     }, ms);
 }
 
+// Generador de contraseñas seguras
+export function generatePassword(options = {}) {
+    const {
+        length = 16,
+        includeUppercase = true,
+        includeLowercase = true,
+        includeNumbers = true,
+        includeSymbols = true,
+        excludeSimilar = false
+    } = options;
+    
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijkmnpqrstuvwxyz';
+    const numbers = '23456789';
+    const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const similar = 'il1Lo0O';
+    
+    let charset = '';
+    if (includeUppercase) charset += uppercase;
+    if (includeLowercase) charset += lowercase;
+    if (includeNumbers) charset += numbers;
+    if (includeSymbols) charset += symbols;
+    
+    if (excludeSimilar && charset) {
+        similar.split('').forEach(char => {
+            charset = charset.replace(new RegExp(char, 'gi'), '');
+        });
+    }
+    
+    if (!charset) {
+        charset = lowercase + numbers; // Fallback mínimo
+    }
+    
+    let password = '';
+    const charsetArray = charset.split('');
+    
+    // Asegurar al menos un carácter de cada tipo seleccionado
+    if (includeUppercase && password.length < length) {
+        password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    }
+    if (includeLowercase && password.length < length) {
+        password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    }
+    if (includeNumbers && password.length < length) {
+        password += numbers[Math.floor(Math.random() * numbers.length)];
+    }
+    if (includeSymbols && password.length < length) {
+        password += symbols[Math.floor(Math.random() * symbols.length)];
+    }
+    
+    // Completar hasta la longitud deseada
+    while (password.length < length) {
+        password += charsetArray[Math.floor(Math.random() * charsetArray.length)];
+    }
+    
+    // Mezclar la contraseña para evitar patrones predecibles
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+}
+
+// Función helper para conectar generador a un input
+export function attachPasswordGenerator(buttonSelector, inputSelector, options = {}) {
+    const button = document.querySelector(buttonSelector);
+    const input = document.querySelector(inputSelector);
+    if (!button || !input) return;
+    
+    button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const generated = generatePassword(options);
+        input.value = generated;
+        input.type = 'text'; // Mostrar la contraseña generada
+        if (input.dispatchEvent) {
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        showToast('Contraseña generada', 'success');
+    });
+}
+
 

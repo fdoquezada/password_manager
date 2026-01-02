@@ -70,6 +70,36 @@ def logout_view(request):
 def dashboard(request):
     entries_list = PasswordEntry.objects.filter(user=request.user).order_by('-id')
     
+    # Estadísticas
+    total_entries = PasswordEntry.objects.filter(user=request.user).count()
+    category_stats = {}
+    for choice in PasswordEntry.CATEGORY_CHOICES:
+        category_stats[choice[0]] = PasswordEntry.objects.filter(user=request.user, category=choice[0]).count()
+    
+    # Detección de contraseñas duplicadas y débiles
+    all_entries = PasswordEntry.objects.filter(user=request.user)
+    password_hashes = {}
+    weak_passwords = []
+    duplicate_passwords = []
+    
+    for entry in all_entries:
+        try:
+            decrypted = decrypt_password(entry.encrypted_password)
+            # Detectar contraseñas débiles (menos de 8 caracteres o solo números/letras)
+            if len(decrypted) < 8 or (decrypted.isdigit() or decrypted.isalpha()):
+                weak_passwords.append(entry.id)
+            
+            # Detectar duplicados
+            if decrypted in password_hashes:
+                if entry.id not in duplicate_passwords:
+                    duplicate_passwords.append(entry.id)
+                if password_hashes[decrypted] not in duplicate_passwords:
+                    duplicate_passwords.append(password_hashes[decrypted])
+            else:
+                password_hashes[decrypted] = entry.id
+        except:
+            pass  # Si no se puede descifrar, omitir
+    
     # Búsqueda
     search_query = request.GET.get('q', '').strip()
     if search_query:
@@ -78,6 +108,11 @@ def dashboard(request):
             Q(site_url__icontains=search_query) |
             Q(username__icontains=search_query)
         )
+    
+    # Filtro por categoría
+    category_filter = request.GET.get('category', '').strip()
+    if category_filter:
+        entries_list = entries_list.filter(category=category_filter)
     
     paginator = Paginator(entries_list, 12)  # 12 entradas por página (3x3 grid)
     
@@ -93,7 +128,13 @@ def dashboard(request):
     
     return render(request, 'vaul/dashboard.html', {
         'entries': entries,
-        'search_query': search_query
+        'search_query': search_query,
+        'category_filter': category_filter,
+        'total_entries': total_entries,
+        'category_stats': category_stats,
+        'weak_passwords': weak_passwords,
+        'duplicate_passwords': duplicate_passwords,
+        'category_choices': PasswordEntry.CATEGORY_CHOICES,
     })
 
 @login_required
@@ -103,6 +144,8 @@ def add_password(request):
         site_url = request.POST.get('site_url', '').strip()
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
+        category = request.POST.get('category', 'other')
+        notes = request.POST.get('notes', '').strip()
 
         if not site_name or not site_url or not username or not password:
             messages.error(request, 'Todos los campos son obligatorios.')
@@ -110,6 +153,7 @@ def add_password(request):
                 'site_name': site_name,
                 'site_url': site_url,
                 'username': username,
+                'notes': notes,
             })
 
         if len(site_url) > 2048:
@@ -118,6 +162,7 @@ def add_password(request):
                 'site_name': site_name,
                 'site_url': site_url,
                 'username': username,
+                'notes': notes,
             })
 
         encrypted = encrypt_password(password)
@@ -126,7 +171,9 @@ def add_password(request):
             site_name=site_name,
             site_url=site_url,
             username=username,
-            encrypted_password=encrypted
+            encrypted_password=encrypted,
+            category=category,
+            notes=notes[:500] if notes else None
         )
         messages.success(request, 'Contraseña guardada correctamente.')
         return redirect('dashboard')
@@ -142,10 +189,14 @@ def edit_password(request, entry_id: int):
         site_url = request.POST.get('site_url', '').strip()
         username = request.POST.get('username', '').strip()
         new_password = request.POST.get('password', '')
+        category = request.POST.get('category', 'other')
+        notes = request.POST.get('notes', '').strip()
 
         entry.site_name = site_name or entry.site_name
         entry.site_url = site_url or entry.site_url
         entry.username = username or entry.username
+        entry.category = category
+        entry.notes = notes[:500] if notes else None
         if new_password:
             entry.encrypted_password = encrypt_password(new_password)
         entry.save()
@@ -231,3 +282,111 @@ def reveal_logs(request):
         'end': end_str,
     }
     return render(request, 'vaul/reveal_logs.html', context)
+
+@login_required
+def export_passwords(request):
+    """Exporta todas las contraseñas del usuario en formato JSON"""
+    if request.method != 'GET':
+        return HttpResponseForbidden('Método no permitido')
+    
+    entries = PasswordEntry.objects.filter(user=request.user).order_by('-created_at')
+    import json
+    from datetime import datetime
+    
+    data = {
+        'export_date': timezone.now().isoformat(),
+        'total_entries': entries.count(),
+        'entries': []
+    }
+    
+    for entry in entries:
+        try:
+            decrypted = decrypt_password(entry.encrypted_password)
+            data['entries'].append({
+                'site_name': entry.site_name,
+                'site_url': entry.site_url,
+                'username': entry.username,
+                'password': decrypted,
+                'category': entry.category,
+                'notes': entry.notes or '',
+                'created_at': entry.created_at.isoformat(),
+            })
+        except:
+            pass  # Omitir entradas que no se pueden descifrar
+    
+    response = HttpResponse(
+        json.dumps(data, indent=2, ensure_ascii=False),
+        content_type='application/json; charset=utf-8'
+    )
+    response['Content-Disposition'] = f'attachment; filename="passwords_export_{timezone.now().strftime("%Y%m%d_%H%M%S")}.json"'
+    return response
+
+@login_required
+def import_passwords(request):
+    """Importa contraseñas desde un archivo JSON"""
+    if request.method != 'POST':
+        return HttpResponseForbidden('Método no permitido')
+    
+    if 'file' not in request.FILES:
+        messages.error(request, 'No se proporcionó ningún archivo.')
+        return redirect('dashboard')
+    
+    import json
+    
+    try:
+        file = request.FILES['file']
+        content = file.read().decode('utf-8')
+        data = json.loads(content)
+        
+        if 'entries' not in data:
+            messages.error(request, 'Formato de archivo inválido.')
+            return redirect('dashboard')
+        
+        imported = 0
+        skipped = 0
+        
+        for entry_data in data['entries']:
+            try:
+                site_name = entry_data.get('site_name', '').strip()
+                site_url = entry_data.get('site_url', '').strip()
+                username = entry_data.get('username', '').strip()
+                password = entry_data.get('password', '')
+                category = entry_data.get('category', 'other')
+                notes = entry_data.get('notes', '').strip()
+                
+                if not site_name or not site_url or not username or not password:
+                    skipped += 1
+                    continue
+                
+                # Verificar si ya existe (evitar duplicados)
+                if PasswordEntry.objects.filter(
+                    user=request.user,
+                    site_name=site_name,
+                    site_url=site_url,
+                    username=username
+                ).exists():
+                    skipped += 1
+                    continue
+                
+                encrypted = encrypt_password(password)
+                PasswordEntry.objects.create(
+                    user=request.user,
+                    site_name=site_name,
+                    site_url=site_url,
+                    username=username,
+                    encrypted_password=encrypted,
+                    category=category,
+                    notes=notes[:500] if notes else None
+                )
+                imported += 1
+            except Exception as e:
+                skipped += 1
+                continue
+        
+        messages.success(request, f'Importación completada: {imported} entradas importadas, {skipped} omitidas.')
+    except json.JSONDecodeError:
+        messages.error(request, 'El archivo no es un JSON válido.')
+    except Exception as e:
+        messages.error(request, f'Error al importar: {str(e)}')
+    
+    return redirect('dashboard')
