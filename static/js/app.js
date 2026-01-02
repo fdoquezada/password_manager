@@ -74,10 +74,25 @@ export function attachPasswordStrengthMeter(inputSelector, meterSelector, labelS
 export function attachPasswordToggle(toggleSelector, inputSelector) {
     const toggle = document.querySelector(toggleSelector);
     const input = document.querySelector(inputSelector);
-    if (!toggle || !input) return;
-    toggle.addEventListener('click', () => {
-        input.type = input.type === 'password' ? 'text' : 'password';
-        toggle.textContent = input.type === 'password' ? 'Mostrar' : 'Ocultar';
+    if (!toggle || !input) {
+        console.warn(`No se encontraron elementos: toggle=${toggleSelector}, input=${inputSelector}`);
+        return;
+    }
+    
+    // Remover listeners anteriores si existen
+    const newToggle = toggle.cloneNode(true);
+    toggle.parentNode.replaceChild(newToggle, toggle);
+    
+    newToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (input.type === 'password') {
+            input.type = 'text';
+            newToggle.textContent = 'Ocultar';
+        } else {
+            input.type = 'password';
+            newToggle.textContent = 'Mostrar';
+        }
     });
 }
 
@@ -172,17 +187,39 @@ export function generatePassword(options = {}) {
 export function attachPasswordGenerator(buttonSelector, inputSelector, options = {}) {
     const button = document.querySelector(buttonSelector);
     const input = document.querySelector(inputSelector);
-    if (!button || !input) return;
+    if (!button || !input) {
+        console.warn(`No se encontraron elementos: button=${buttonSelector}, input=${inputSelector}`);
+        return;
+    }
     
-    button.addEventListener('click', (e) => {
+    // Remover listeners anteriores si existen
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+    
+    newButton.addEventListener('click', (e) => {
         e.preventDefault();
-        const generated = generatePassword(options);
-        input.value = generated;
-        input.type = 'text'; // Mostrar la contraseña generada
-        if (input.dispatchEvent) {
-            input.dispatchEvent(new Event('input', { bubbles: true }));
+        e.stopPropagation();
+        try {
+            const generated = generatePassword(options);
+            input.value = generated;
+            input.type = 'text'; // Mostrar la contraseña generada
+            // Disparar evento input para actualizar el medidor de fortaleza
+            if (input.dispatchEvent) {
+                const event = new Event('input', { bubbles: true });
+                input.dispatchEvent(event);
+            }
+            // Intentar mostrar toast si está disponible
+            if (typeof showToast === 'function') {
+                showToast('Contraseña generada', 'success');
+            }
+        } catch (error) {
+            console.error('Error generando contraseña:', error);
+            if (typeof showToast === 'function') {
+                showToast('Error al generar contraseña', 'error');
+            } else {
+                alert('Error al generar contraseña');
+            }
         }
-        showToast('Contraseña generada', 'success');
     });
 }
 

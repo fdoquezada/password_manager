@@ -10,11 +10,11 @@
     {% csrf_token %}
     <div class="field">
       <label>Usuario</label>
-      <input type="text" name="username" placeholder="Usuario">
+      <input type="text" name="username" placeholder="Usuario" value="{{ username_value|default:'' }}" required autofocus>
     </div>
     <div class="field">
       <label>Contraseña</label>
-      <input type="password" name="password" placeholder="Contraseña">
+      <input type="password" name="password" placeholder="Contraseña" required>
     </div>
     <div>
       <button type="submit" class="btn primary">Entrar</button>

@@ -21,10 +21,21 @@ def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     if request.method == 'POST':
-        user = authenticate(username=request.POST['username'], password=request.POST['password'])
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        if not username or not password:
+            messages.error(request, 'Por favor, ingresa tu usuario y contraseña.')
+            return render(request, 'vaul/login.html', {'username_value': username})
+        
+        user = authenticate(username=username, password=password)
         if user:
             login(request, user)
+            messages.success(request, f'¡Bienvenido, {user.username}!')
             return redirect('dashboard')
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos. Por favor, intenta de nuevo.')
+            return render(request, 'vaul/login.html', {'username_value': username})
     return render(request, 'vaul/login.html')
 
 def register_view(request):
