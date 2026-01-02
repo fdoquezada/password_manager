@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils import timezone
+from django.db.models import Q
 from datetime import datetime, time
 import csv
 from .models import PasswordEntry, RevealLog
@@ -68,7 +69,17 @@ def logout_view(request):
 @login_required
 def dashboard(request):
     entries_list = PasswordEntry.objects.filter(user=request.user).order_by('-id')
-    paginator = Paginator(entries_list, 12)  # 9 entradas por página (3x3 grid)
+    
+    # Búsqueda
+    search_query = request.GET.get('q', '').strip()
+    if search_query:
+        entries_list = entries_list.filter(
+            Q(site_name__icontains=search_query) |
+            Q(site_url__icontains=search_query) |
+            Q(username__icontains=search_query)
+        )
+    
+    paginator = Paginator(entries_list, 12)  # 12 entradas por página (3x3 grid)
     
     page = request.GET.get('page')
     try:
@@ -80,7 +91,10 @@ def dashboard(request):
         # Si la página está fuera de rango, mostrar la última página
         entries = paginator.page(paginator.num_pages)
     
-    return render(request, 'vaul/dashboard.html', {'entries': entries})
+    return render(request, 'vaul/dashboard.html', {
+        'entries': entries,
+        'search_query': search_query
+    })
 
 @login_required
 def add_password(request):

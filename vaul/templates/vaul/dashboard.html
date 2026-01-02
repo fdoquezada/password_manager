@@ -10,6 +10,28 @@
   <div></div>
 </div>
 
+<!-- Campo de búsqueda -->
+<form method="get" action="{% url 'dashboard' %}" style="margin-bottom: 20px;">
+  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+    <input 
+      type="text" 
+      name="q" 
+      value="{{ search_query }}" 
+      placeholder="Buscar por nombre, URL o usuario..." 
+      style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+      autocomplete="off"
+    />
+    <button type="submit" class="btn" style="white-space: nowrap;">
+      <i class="fas fa-search"></i> Buscar
+    </button>
+    {% if search_query %}
+    <a href="{% url 'dashboard' %}" class="btn" style="white-space: nowrap;">
+      <i class="fas fa-times"></i> Limpiar
+    </a>
+    {% endif %}
+  </div>
+</form>
+
 <div class="grid cols-3"> <!-- 4 columnas para una vista más amplia -->
 {% for entry in entries %}
   <div class="card list item">
@@ -39,8 +61,8 @@
 {% if entries.has_other_pages %}
 <div style="margin-top: 24px; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap;">
   {% if entries.has_previous %}
-    <a href="?page=1" class="btn">« Primera</a>
-    <a href="?page={{ entries.previous_page_number }}" class="btn">‹ Anterior</a>
+    <a href="?page=1{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="btn">« Primera</a>
+    <a href="?page={{ entries.previous_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="btn">‹ Anterior</a>
   {% else %}
     <span class="btn" style="opacity: 0.5; cursor: not-allowed;">« Primera</span>
     <span class="btn" style="opacity: 0.5; cursor: not-allowed;">‹ Anterior</span>
@@ -51,8 +73,8 @@
   </span>
   
   {% if entries.has_next %}
-    <a href="?page={{ entries.next_page_number }}" class="btn">Siguiente ›</a>
-    <a href="?page={{ entries.paginator.num_pages }}" class="btn">Última »</a>
+    <a href="?page={{ entries.next_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="btn">Siguiente ›</a>
+    <a href="?page={{ entries.paginator.num_pages }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="btn">Última »</a>
   {% else %}
     <span class="btn" style="opacity: 0.5; cursor: not-allowed;">Siguiente ›</span>
     <span class="btn" style="opacity: 0.5; cursor: not-allowed;">Última »</span>
